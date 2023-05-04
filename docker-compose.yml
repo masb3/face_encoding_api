@@ -1,0 +1,61 @@
+version: "3"
+
+services:
+  api:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+      - rabbitmq
+      - redis
+      - worker
+    volumes:
+      - ./app:/code/face_encoding_api/app
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dummy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dummy}
+      POSTGRES_DB: ${POSTGRES_DB:-dummy}
+    env_file:
+      - .env
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./initial_create_table.sql:/docker-entrypoint-initdb.d/initial_create_table.sql
+      - db_data:/var/lib/postgresql/data/
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+  rabbitmq:
+    image: rabbitmq:latest
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-dummy}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-dummy}
+    env_file:
+      - .env
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  worker:
+    build: .
+    command: celery -A app.worker.app worker -l INFO
+    depends_on:
+      - db
+      - rabbitmq
+      - redis
+    volumes:
+      - ./app:/code/face_encoding_api/app
+  flower:
+    build: .
+    command: celery -A app.worker.app flower
+    ports:
+      - "5555:5555"
+    depends_on:
+      - worker
+
+volumes:
+  db_data:
