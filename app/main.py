@@ -1,24 +1,25 @@
 import os
 import pathlib
-
 from typing import Union
+from uuid import UUID
 
 import aiofiles
 import databases
 import face_recognition
-
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, HTTPException
 from pydantic import BaseModel
 
-from face_encoding_api.settings import settings
+from face_encoding_api.app.constants import FACE_ENCODING_STATUS_CREATED
 from face_encoding_api.app.worker import create_task
-
+from face_encoding_api.settings import settings
 
 database = databases.Database(settings.DATABASE_URL)
 
 
-class ImgEncoding(BaseModel):
-    encoding: list[float] = []
+class FaceEncodingResp(BaseModel):
+    id: UUID
+    face_encoding: list[float] = []
+    status: str
 
 
 app = FastAPI()
@@ -40,17 +41,33 @@ async def root():
     return {"Hello!!!!"}
 
 
+@app.get("/face_encoding/{item_id}")
+async def get_face_encoding(item_id: UUID) -> FaceEncodingResp:
+    query = """
+                SELECT COALESCE(face_encoding, ARRAY[]::FLOAT[]) as face_encoding, status
+                FROM face_encodings
+                WHERE id = :item_id;
+            """
+    result = await database.fetch_one(query, {"item_id": item_id})
+    if not result:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return FaceEncodingResp(
+        id=item_id,
+        face_encoding=result._mapping["face_encoding"],
+        status=result._mapping["status"],
+    )
+
+
 @app.post("/uploadfile/")
-async def create_upload_file(file: UploadFile) -> Union[ImgEncoding, dict]:
+async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
     try:
         contents = await file.read()
 
-        query = "INSERT INTO face_encodings (status) VALUES ('created') RETURNING id;"
+        query = f"INSERT INTO face_encodings (status) VALUES ('{FACE_ENCODING_STATUS_CREATED}') RETURNING id;"
         record_id = await database.execute(query)
 
-        file_name = str(record_id)
         file_extension = pathlib.PurePath(file.filename).suffix
-        path_filename = f"{os.getcwd()}/files/{file_name}{file_extension}"
+        path_filename = f"{os.getcwd()}/files/{str(record_id)}{file_extension}"
         os.makedirs(
             os.path.dirname(path_filename), exist_ok=True
         )  # create folder if not exists
@@ -64,4 +81,8 @@ async def create_upload_file(file: UploadFile) -> Union[ImgEncoding, dict]:
     finally:
         await file.close()
 
-    return ImgEncoding(encoding=img_encoding[0].tolist())
+    return FaceEncodingResp(
+        id=record_id,
+        face_encoding=img_encoding[0].tolist(),
+        status=FACE_ENCODING_STATUS_CREATED,
+    )
