@@ -22,6 +22,14 @@ class FaceEncodingResp(BaseModel):
     status: str
 
 
+class StatsResp(BaseModel):
+    total: int = 0
+    created: int = 0
+    in_progress: int = 0  # TODO: remove as obsolete
+    completed: int = 0
+    failed: int = 0
+
+
 app = FastAPI()
 
 
@@ -86,3 +94,17 @@ async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
         face_encoding=img_encoding[0].tolist(),
         status=FACE_ENCODING_STATUS_CREATED,
     )
+
+
+@app.get("/stats/")
+async def get_stats() -> StatsResp:
+    query = """
+                SELECT 'total' AS status, COUNT(*) AS count 
+                FROM face_encodings 
+                UNION 
+                SELECT status, COUNT(*) 
+                FROM face_encodings 
+                GROUP BY status;
+            """
+    result = await database.fetch_all(query)
+    return StatsResp(**{r._mapping["status"]: r._mapping["count"] for r in result})
