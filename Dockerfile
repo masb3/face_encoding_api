@@ -40,6 +40,6 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 COPY . /code/face_encoding_api
 
-RUN mkdir -p app/files
+RUN mkdir -p /files
 # CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
 EXPOSE 5000

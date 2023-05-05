@@ -1,19 +1,37 @@
 import os
+import pathlib
 
-import face_recognition
-import aiofiles
 from typing import Union
+
+import aiofiles
+import databases
+import face_recognition
 
 from fastapi import FastAPI, UploadFile
 from pydantic import BaseModel
 
+from face_encoding_api.settings import settings
 from face_encoding_api.app.worker import create_task
 
-app = FastAPI()
+
+database = databases.Database(settings.DATABASE_URL)
 
 
 class ImgEncoding(BaseModel):
     encoding: list[float] = []
+
+
+app = FastAPI()
+
+
+@app.on_event("startup")
+async def startup():
+    await database.connect()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
 
 
 @app.get("/")
@@ -26,12 +44,18 @@ async def root():
 async def create_upload_file(file: UploadFile) -> Union[ImgEncoding, dict]:
     try:
         contents = await file.read()
-        path_filename = f"{os.getcwd()}/files/{file.filename}"
-        os.makedirs(os.path.dirname(path_filename), exist_ok=True)  # create folder if not exists
+
+        query = "INSERT INTO face_encodings (status) VALUES ('created') RETURNING id;"
+        record_id = await database.execute(query)
+
+        file_name = str(record_id)
+        file_extension = pathlib.PurePath(file.filename).suffix
+        path_filename = f"{os.getcwd()}/files/{file_name}{file_extension}"
+        os.makedirs(
+            os.path.dirname(path_filename), exist_ok=True
+        )  # create folder if not exists
         async with aiofiles.open(path_filename, "wb") as f:
             await f.write(contents)
-            # TODO: rename file to uuid
-            # TODO: save uuid to db
             # TODO: encoding move to celery
             img = face_recognition.load_image_file(f.name)
             img_encoding = face_recognition.face_encodings(img)
