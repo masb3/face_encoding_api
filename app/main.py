@@ -68,26 +68,30 @@ async def get_face_encoding(item_id: UUID) -> FaceEncodingResp:
 
 @app.post("/uploadfile/")
 async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
-    try:
-        contents = await file.read()
+    contents = await file.read()
 
-        query = f"INSERT INTO face_encodings (status) VALUES ('{FACE_ENCODING_STATUS_CREATED}') RETURNING id;"
-        record_id = await database.execute(query)
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=400, detail=f"Unexpected content-type '{file.content_type}'"
+        )
+    if file.size > 10 ** 7:
+        raise HTTPException(status_code=400, detail="File size limit 10MB")
 
-        file_extension = pathlib.PurePath(file.filename).suffix
-        path_filename = f"{os.getcwd()}/files/{str(record_id)}{file_extension}"
-        os.makedirs(
-            os.path.dirname(path_filename), exist_ok=True
-        )  # create folder if not exists
-        async with aiofiles.open(path_filename, "wb") as f:
-            await f.write(contents)
-            # TODO: encoding move to celery
-            img = face_recognition.load_image_file(f.name)
-            face_encodings = face_recognition.face_encodings(img)
-    except Exception:  # FIXME: too broad
-        return {"message": "Error uploading the file"}
-    finally:
-        await file.close()
+    query = f"INSERT INTO face_encodings (status) VALUES ('{FACE_ENCODING_STATUS_CREATED}') RETURNING id;"
+    record_id = await database.execute(query)
+
+    file_extension = pathlib.PurePath(file.filename).suffix
+    path_filename = f"{os.getcwd()}/files/{str(record_id)}{file_extension}"
+    os.makedirs(
+        os.path.dirname(path_filename), exist_ok=True
+    )  # create folder if not exists
+    async with aiofiles.open(path_filename, "wb") as f:
+        await f.write(contents)
+        # TODO: encoding move to celery
+        img = face_recognition.load_image_file(f.name)
+        face_encodings = face_recognition.face_encodings(img)
+
+    await file.close()
 
     return FaceEncodingResp(
         id=record_id,
