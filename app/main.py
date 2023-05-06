@@ -83,7 +83,7 @@ async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
             await f.write(contents)
             # TODO: encoding move to celery
             img = face_recognition.load_image_file(f.name)
-            img_encoding = face_recognition.face_encodings(img)
+            face_encodings = face_recognition.face_encodings(img)
     except Exception:  # FIXME: too broad
         return {"message": "Error uploading the file"}
     finally:
@@ -91,7 +91,7 @@ async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
 
     return FaceEncodingResp(
         id=record_id,
-        face_encoding=img_encoding[0].tolist(),
+        face_encoding=face_encodings[0].tolist() if face_encodings else [],
         status=FACE_ENCODING_STATUS_CREATED,
     )
 
