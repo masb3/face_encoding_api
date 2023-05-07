@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from face_encoding_api.app import db
 from face_encoding_api.app.constants import FACE_ENCODING_STATUS_CREATED
-from face_encoding_api.app.worker import create_task
+from face_encoding_api.app.worker import face_encoding_task
 
 
 class FaceEncodingResp(BaseModel):
@@ -58,7 +58,7 @@ async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
     )  # create folder if not exists
     async with aiofiles.open(path_filename, "wb") as f:
         await f.write(contents)
-        create_task.apply_async(
+        face_encoding_task.apply_async(
             kwargs={"item_id": str(item_id), "path_filename": path_filename}
         )
 

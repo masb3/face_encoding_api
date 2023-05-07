@@ -41,8 +41,8 @@ def shutdown_worker(**kwargs):
         conn.close()
 
 
-@app.task(name="create_task")
-def create_task(item_id: str, path_filename: str):
+@app.task(name="face_encoding_task")
+def face_encoding_task(item_id: str, path_filename: str):
     query_validate_exists = """
                         SELECT EXISTS
                         (SELECT 1 
