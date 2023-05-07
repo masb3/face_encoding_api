@@ -5,7 +5,6 @@ from uuid import UUID
 
 import aiofiles
 import databases
-import face_recognition
 from fastapi import FastAPI, UploadFile, HTTPException
 from pydantic import BaseModel
 
@@ -41,12 +40,6 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
-
-
-@app.get("/")
-async def root():
-    create_task.apply_async(kwargs={"task_type": 1})
-    return {"Hello!!!!"}
 
 
 @app.get("/face_encoding/{item_id}")
@@ -87,15 +80,13 @@ async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
     )  # create folder if not exists
     async with aiofiles.open(path_filename, "wb") as f:
         await f.write(contents)
-        # TODO: encoding move to celery
-        img = face_recognition.load_image_file(f.name)
-        face_encodings = face_recognition.face_encodings(img)
+        create_task.apply_async(kwargs={"item_id": str(record_id), "path_filename": path_filename})
 
     await file.close()
 
     return FaceEncodingResp(
         id=record_id,
-        face_encoding=face_encodings[0].tolist() if face_encodings else [],
+        face_encoding=[],
         status=FACE_ENCODING_STATUS_CREATED,
     )
 

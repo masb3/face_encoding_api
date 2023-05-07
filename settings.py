@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "dummy"
     POSTGRES_PASSWORD: str = "dummy"
     POSTGRES_DB: str = "dummy"
+    POSTGRES_HOST: str = "db"
+    POSTGRES_PORT: str = "5432"
     DATABASE_URL: str = "postgresql://dummy:dummy@db:5432/dummy"
 
     CELERY_BROKER_URL: str = "amqp://dummy:dummy@rabbitmq:5672//"
