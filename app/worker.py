@@ -1,6 +1,9 @@
+from urllib.parse import urlparse
+
 import face_recognition
 import psycopg2
 from celery import Celery
+from celery.signals import worker_process_init, worker_process_shutdown
 
 from face_encoding_api.app.constants import (
     FACE_ENCODING_STATUS_CREATED,
@@ -15,13 +18,27 @@ app.conf.broker_url = settings.CELERY_BROKER_URL
 app.conf.result_backend = settings.CELERY_RESULT_BACKEND
 # app.conf.task_ignore_result = True
 
-conn = psycopg2.connect(
-    dbname=settings.POSTGRES_DB,
-    user=settings.POSTGRES_USER,
-    password=settings.POSTGRES_PASSWORD,
-    host=settings.POSTGRES_HOST,
-    port=settings.POSTGRES_PORT,
-)
+conn = None
+
+
+@worker_process_init.connect
+def init_worker(**kwargs):
+    global conn
+    db_url = urlparse(settings.DATABASE_URL)
+    conn = psycopg2.connect(
+        dbname=db_url.path[1:],
+        user=db_url.username,
+        password=db_url.password,
+        host=db_url.hostname,
+        port=db_url.port,
+    )
+
+
+@worker_process_shutdown.connect
+def shutdown_worker(**kwargs):
+    global conn
+    if conn:
+        conn.close()
 
 
 @app.task(name="create_task")
