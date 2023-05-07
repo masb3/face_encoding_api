@@ -64,11 +64,7 @@ async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
 
     await file.close()
 
-    return FaceEncodingResp(
-        id=item_id,
-        status=FACE_ENCODING_STATUS_CREATED,
-        face_encoding=[],
-    )
+    return FaceEncodingResp(id=item_id, status=FACE_ENCODING_STATUS_CREATED)
 
 
 @app.get("/face_encoding/{item_id}")

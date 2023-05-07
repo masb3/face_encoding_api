@@ -8,10 +8,10 @@ from face_encoding_api.app.constants import FACE_ENCODING_STATUS_CREATED
 from face_encoding_api.settings import settings
 
 
-database = databases.Database(settings.DATABASE_URL)
+database = databases.Database(settings.DATABASE_URL)  # Async used by FastAPI
 
 
-def psycopg2_conn():
+def psycopg2_conn():  # Sync used by Celery
     db_url = urlparse(settings.DATABASE_URL)
     return psycopg2.connect(
         dbname=db_url.path[1:],
