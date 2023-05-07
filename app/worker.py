@@ -1,7 +1,4 @@
-from urllib.parse import urlparse
-
 import face_recognition
-import psycopg2
 from celery import Celery
 from celery.signals import worker_process_init, worker_process_shutdown
 
@@ -10,6 +7,7 @@ from face_encoding_api.app.constants import (
     FACE_ENCODING_STATUS_COMPLETED,
     FACE_ENCODING_STATUS_FAILED,
 )
+from face_encoding_api.app.db import psycopg2_conn
 from face_encoding_api.settings import settings
 
 
@@ -24,14 +22,7 @@ conn = None
 @worker_process_init.connect
 def init_worker(**kwargs):
     global conn
-    db_url = urlparse(settings.DATABASE_URL)
-    conn = psycopg2.connect(
-        dbname=db_url.path[1:],
-        user=db_url.username,
-        password=db_url.password,
-        host=db_url.hostname,
-        port=db_url.port,
-    )
+    conn = psycopg2_conn()
 
 
 @worker_process_shutdown.connect

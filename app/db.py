@@ -1,12 +1,25 @@
+from urllib.parse import urlparse
 from uuid import UUID
 
 import databases
+import psycopg2
 
 from face_encoding_api.app.constants import FACE_ENCODING_STATUS_CREATED
 from face_encoding_api.settings import settings
 
 
 database = databases.Database(settings.DATABASE_URL)
+
+
+def psycopg2_conn():
+    db_url = urlparse(settings.DATABASE_URL)
+    return psycopg2.connect(
+        dbname=db_url.path[1:],
+        user=db_url.username,
+        password=db_url.password,
+        host=db_url.hostname,
+        port=db_url.port,
+    )
 
 
 async def create_face_encoding():
