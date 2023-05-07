@@ -17,14 +17,13 @@ database = databases.Database(settings.DATABASE_URL)
 
 class FaceEncodingResp(BaseModel):
     id: UUID
-    face_encoding: list[float] = []
     status: str
+    face_encoding: list[float] = []
 
 
 class StatsResp(BaseModel):
     total: int = 0
     created: int = 0
-    in_progress: int = 0  # TODO: remove as obsolete
     completed: int = 0
     failed: int = 0
 
@@ -54,8 +53,8 @@ async def get_face_encoding(item_id: UUID) -> FaceEncodingResp:
         raise HTTPException(status_code=404, detail="Item not found")
     return FaceEncodingResp(
         id=item_id,
-        face_encoding=result._mapping["face_encoding"],
         status=result._mapping["status"],
+        face_encoding=result._mapping["face_encoding"],
     )
 
 
@@ -80,14 +79,16 @@ async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
     )  # create folder if not exists
     async with aiofiles.open(path_filename, "wb") as f:
         await f.write(contents)
-        create_task.apply_async(kwargs={"item_id": str(record_id), "path_filename": path_filename})
+        create_task.apply_async(
+            kwargs={"item_id": str(record_id), "path_filename": path_filename}
+        )
 
     await file.close()
 
     return FaceEncodingResp(
         id=record_id,
-        face_encoding=[],
         status=FACE_ENCODING_STATUS_CREATED,
+        face_encoding=[],
     )
 
 
