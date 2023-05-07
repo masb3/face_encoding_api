@@ -4,15 +4,12 @@ from typing import Union
 from uuid import UUID
 
 import aiofiles
-import databases
 from fastapi import FastAPI, UploadFile, HTTPException
 from pydantic import BaseModel
 
+from face_encoding_api.app import db
 from face_encoding_api.app.constants import FACE_ENCODING_STATUS_CREATED
 from face_encoding_api.app.worker import create_task
-from face_encoding_api.settings import settings
-
-database = databases.Database(settings.DATABASE_URL)
 
 
 class FaceEncodingResp(BaseModel):
@@ -33,29 +30,12 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup():
-    await database.connect()
+    await db.database.connect()
 
 
 @app.on_event("shutdown")
 async def shutdown():
-    await database.disconnect()
-
-
-@app.get("/face_encoding/{item_id}")
-async def get_face_encoding(item_id: UUID) -> FaceEncodingResp:
-    query = """
-                SELECT COALESCE(face_encoding, ARRAY[]::FLOAT[]) as face_encoding, status
-                FROM face_encodings
-                WHERE id = :item_id;
-            """
-    result = await database.fetch_one(query, {"item_id": item_id})
-    if not result:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return FaceEncodingResp(
-        id=item_id,
-        status=result._mapping["status"],
-        face_encoding=result._mapping["face_encoding"],
-    )
+    await db.database.disconnect()
 
 
 @app.post("/uploadfile/")
@@ -69,38 +49,41 @@ async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
     if file.size > 10 ** 7:
         raise HTTPException(status_code=400, detail="File size limit 10MB")
 
-    query = f"INSERT INTO face_encodings (status) VALUES ('{FACE_ENCODING_STATUS_CREATED}') RETURNING id;"
-    record_id = await database.execute(query)
+    item_id = await db.create_face_encoding()
 
     file_extension = pathlib.PurePath(file.filename).suffix
-    path_filename = f"{os.getcwd()}/files/{str(record_id)}{file_extension}"
+    path_filename = f"{os.getcwd()}/files/{str(item_id)}{file_extension}"
     os.makedirs(
         os.path.dirname(path_filename), exist_ok=True
     )  # create folder if not exists
     async with aiofiles.open(path_filename, "wb") as f:
         await f.write(contents)
         create_task.apply_async(
-            kwargs={"item_id": str(record_id), "path_filename": path_filename}
+            kwargs={"item_id": str(item_id), "path_filename": path_filename}
         )
 
     await file.close()
 
     return FaceEncodingResp(
-        id=record_id,
+        id=item_id,
         status=FACE_ENCODING_STATUS_CREATED,
         face_encoding=[],
     )
 
 
+@app.get("/face_encoding/{item_id}")
+async def face_encoding(item_id: UUID) -> FaceEncodingResp:
+    result = await db.get_face_encoding(item_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return FaceEncodingResp(
+        id=item_id,
+        status=result._mapping["status"],
+        face_encoding=result._mapping["face_encoding"],
+    )
+
+
 @app.get("/stats/")
-async def get_stats() -> StatsResp:
-    query = """
-                SELECT 'total' AS status, COUNT(*) AS count 
-                FROM face_encodings 
-                UNION 
-                SELECT status, COUNT(*) 
-                FROM face_encodings 
-                GROUP BY status;
-            """
-    result = await database.fetch_all(query)
+async def stats() -> StatsResp:
+    result = await db.get_stats()
     return StatsResp(**{r._mapping["status"]: r._mapping["count"] for r in result})
