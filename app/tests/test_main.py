@@ -1,6 +1,63 @@
+import os
+import uuid
+
 import pytest
 
 from face_encoding_api.app import db
+from face_encoding_api.app import worker
+from face_encoding_api.app.constants import FACE_ENCODING_STATUS_CREATED
+
+
+def test_create_upload_file(test_app, monkeypatch):
+    item_id = uuid.UUID("dce15431-a672-4ef2-b94d-4fe2f16b482f")
+    expected_resp = {
+        "id": str(item_id),
+        "status": FACE_ENCODING_STATUS_CREATED,
+        "face_encoding": [],
+    }
+
+    async def mock_create_face_encoding():
+        return item_id
+
+    def mock_face_encoding_task(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(db, "create_face_encoding", mock_create_face_encoding)
+    monkeypatch.setattr(worker.app, "send_task", mock_face_encoding_task)
+    with open(f"{os.getcwd()}/face_encoding_api/app/tests/files/people.jpg", "rb") as f:
+        resp = test_app.post(
+            "/uploadfile/", files={"file": ("people.jpg", f, "image/jpeg")}
+        )
+
+    assert resp.status_code == 201
+    assert resp.json() == expected_resp
+
+
+def test_create_upload_file_unexpected_content_type(test_app, monkeypatch):
+    item_id = uuid.UUID("dce15431-a672-4ef2-b94d-4fe2f16b482f")
+
+    async def mock_create_face_encoding():
+        return item_id
+
+    def mock_face_encoding_task(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(db, "create_face_encoding", mock_create_face_encoding)
+    monkeypatch.setattr(worker.app, "send_task", mock_face_encoding_task)
+    with open(f"{os.getcwd()}/face_encoding_api/app/tests/files/people.jpg", "rb") as f:
+        resp = test_app.post(
+            "/uploadfile/", files={"file": ("people.jpg", f, "application/jpeg")}
+        )
+
+    assert resp.status_code == 400
+    assert resp.json() == {"detail": f"Unexpected content-type 'application/jpeg'"}
+
+
+@pytest.mark.parametrize("method", ["get", "put", "patch", "delete", "options"])
+def test_create_upload_file_api_method_not_allowed(test_app, method):
+    resp = getattr(test_app, method)(f"/uploadfile/")
+
+    assert resp.status_code == 405
 
 
 def test_face_encoding(test_app, monkeypatch):

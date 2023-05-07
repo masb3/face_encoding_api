@@ -38,7 +38,7 @@ async def shutdown():
     await db.database.disconnect()
 
 
-@app.post("/uploadfile/")
+@app.post("/uploadfile/", status_code=201)
 async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
     contents = await file.read()
 
