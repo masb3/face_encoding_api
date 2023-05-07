@@ -34,7 +34,7 @@ def create_task(item_id: str, path_filename: str):
                     """
     query_insert_encoding = """
                     UPDATE face_encodings
-                    SET status = %(status)s 
+                    SET status = %(status)s, face_encoding = %(face_encoding)s 
                     WHERE id = %(item_id)s;
                     """
 
@@ -50,9 +50,14 @@ def create_task(item_id: str, path_filename: str):
             face_encodings = face_recognition.face_encodings(img)
             cur.execute(
                 query_insert_encoding,
-                {"item_id": item_id, "status": FACE_ENCODING_STATUS_COMPLETED},
+                {
+                    "item_id": item_id,
+                    "status": FACE_ENCODING_STATUS_COMPLETED,
+                    "face_encoding": face_encodings[0].tolist()
+                    if face_encodings
+                    else None,
+                },
             )
-            # TODO: face_encodings[0].tolist() if face_encodings else []
             conn.commit()
         except:  # FIXME: too broad
             cur.execute(
