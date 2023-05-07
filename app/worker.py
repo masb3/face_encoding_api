@@ -34,42 +34,33 @@ def shutdown_worker(**kwargs):
 
 @app.task(name="face_encoding_task")
 def face_encoding_task(item_id: str, path_filename: str):
-    query_validate_exists = """
-                        SELECT EXISTS
-                        (SELECT 1 
-                        FROM face_encodings 
-                        WHERE id = %(item_id)s AND status = %(status)s);
-                    """
-    query_insert_encoding = """
-                    UPDATE face_encodings
-                    SET status = %(status)s, face_encoding = %(face_encoding)s 
-                    WHERE id = %(item_id)s;
-                    """
+    # Update only if id exists and current state 'created'
+    query = """
+                UPDATE face_encodings
+                SET status = %(new_status)s, face_encoding = %(face_encoding)s 
+                WHERE id = %(item_id)s AND status = %(cur_status)s;
+            """
 
     with conn.cursor() as cur:
-        cur.execute(
-            query_validate_exists,
-            {"item_id": item_id, "status": FACE_ENCODING_STATUS_CREATED},
-        )
-        if not cur.fetchone()[0]:
-            return
+        failed = False
+        face_encodings = None
         try:
             img = face_recognition.load_image_file(path_filename)
             face_encodings = face_recognition.face_encodings(img)
+        except FileNotFoundError:
+            failed = True
+        finally:
             cur.execute(
-                query_insert_encoding,
+                query,
                 {
                     "item_id": item_id,
-                    "status": FACE_ENCODING_STATUS_COMPLETED,
+                    "cur_status": FACE_ENCODING_STATUS_CREATED,
+                    "new_status": FACE_ENCODING_STATUS_COMPLETED
+                    if not failed
+                    else FACE_ENCODING_STATUS_FAILED,
                     "face_encoding": face_encodings[0].tolist()
-                    if face_encodings
+                    if face_encodings and not failed
                     else None,
                 },
-            )
-            conn.commit()
-        except:  # FIXME: too broad
-            cur.execute(
-                query_insert_encoding,
-                {"item_id": item_id, "status": FACE_ENCODING_STATUS_FAILED},
             )
             conn.commit()
