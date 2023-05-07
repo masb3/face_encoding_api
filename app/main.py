@@ -76,14 +76,10 @@ async def face_encoding(item_id: UUID) -> FaceEncodingResp:
     result = await db.get_face_encoding(item_id)
     if not result:
         raise HTTPException(status_code=404, detail="Item not found")
-    return FaceEncodingResp(
-        id=item_id,
-        status=result._mapping["status"],
-        face_encoding=result._mapping["face_encoding"],
-    )
+    return FaceEncodingResp(**result)
 
 
 @app.get("/stats/")
 async def stats() -> StatsResp:
     result = await db.get_stats()
-    return StatsResp(**{r._mapping["status"]: r._mapping["count"] for r in result})
+    return StatsResp(**result)

@@ -33,7 +33,16 @@ async def get_face_encoding(item_id: UUID):
                 FROM face_encodings
                 WHERE id = :item_id;
             """
-    return await database.fetch_one(query, {"item_id": item_id})
+    result = await database.fetch_one(query, {"item_id": item_id})
+    return (
+        {
+            "id": item_id,
+            "status": result._mapping["status"],
+            "face_encoding": result._mapping["face_encoding"],
+        }
+        if result
+        else None
+    )
 
 
 async def get_stats():
@@ -45,4 +54,5 @@ async def get_stats():
                 FROM face_encodings 
                 GROUP BY status;
             """
-    return await database.fetch_all(query)
+    result = await database.fetch_all(query)
+    return {r._mapping["status"]: r._mapping["count"] for r in result}
