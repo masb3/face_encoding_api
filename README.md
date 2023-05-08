@@ -3,7 +3,7 @@
 ## Solution architecture
 ### API:
 Built on top of **FastAPI** which allows to handle a large number of requests per second with low latency.
-- `/uploadfile/`: endpoint to upload and validate image. 
+- `/uploadfile/`: endpoint to upload and validate image against file type and size. 
 Assigns uuid, renames and saves image in file storage for further processing. 
 Responds with uuid for later face encoding retrieval.
 - `/face_encoding/<uuid>/`: endpoint to retrieve face encoding and status of operation.
@@ -48,7 +48,7 @@ Set default to some meaningful period
 
 
 ## HOWTO
-Create `.env` file in the project root folder
+Create `.env` file in the project root folder. Following example can be used without changes.
 ```commandline
 POSTGRES_USER="dummy"
 POSTGRES_PASSWORD="dummy"
