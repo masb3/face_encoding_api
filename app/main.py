@@ -25,6 +25,10 @@ class StatsResp(BaseModel):
     failed: int = 0
 
 
+class BonusResp(BaseModel):
+    avg: list[float] = []
+
+
 app = FastAPI()
 
 
@@ -79,3 +83,9 @@ async def face_encoding(item_id: UUID) -> FaceEncodingResp:
 async def stats() -> StatsResp:
     result = await db.get_stats()
     return StatsResp(**result)
+
+
+@app.get("/bonus/")
+async def bonus() -> BonusResp:
+    result = await db.get_avg_face_encodings()
+    return BonusResp(avg=result)

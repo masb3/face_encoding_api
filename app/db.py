@@ -3,8 +3,9 @@ from uuid import UUID
 
 import databases
 import psycopg2
+import numpy as np
 
-from face_encoding_api.app.constants import FACE_ENCODING_STATUS_CREATED
+from face_encoding_api.app.constants import FACE_ENCODING_STATUS_CREATED, FACE_ENCODING_STATUS_COMPLETED
 from face_encoding_api.settings import settings
 
 
@@ -56,3 +57,19 @@ async def get_stats():
             """
     result = await database.fetch_all(query)
     return {r._mapping["status"]: r._mapping["count"] for r in result}
+
+
+async def get_avg_face_encodings():
+    dimension = 128
+    query = """
+                SELECT face_encoding
+                FROM face_encodings
+                WHERE status = :status 
+                    AND face_encoding IS NOT NULL 
+                    AND array_length(face_encoding, 1) = :arr_len;
+            """
+    avg = [0] * dimension  # Init avg array with zeros
+    async for row in database.iterate(query, {"status": FACE_ENCODING_STATUS_COMPLETED, "arr_len": dimension}):
+        arr = np.array([avg, row._mapping["face_encoding"]])
+        avg = np.average(arr, axis=0).tolist()
+    return avg

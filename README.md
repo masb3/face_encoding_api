@@ -8,6 +8,7 @@ Assigns uuid, renames and saves image in file storage for further processing.
 Responds with uuid for later face encoding retrieval.
 - `/face_encoding/<uuid>/`: endpoint to retrieve face encoding and status of operation.
 - `/stats/`: endpoint to get total number of processed images and number of images processed grouped by status. 
+- `/bonus/`: calculates the average face encodings for all previously calculated images.  
 
 ### Image processing background task
 Face encoding run asynchronous outside API request by separate worker process. 
@@ -40,6 +41,9 @@ created_at: timestamp
 - Multiple files upload
 - File storage outside API server 
 - Monitoring with Sentry, Datadog
+- Bonus API accept timeperiod in query parameter to limit number of face encodings to calculate average.
+Set default to some meaningful period
+
 
 
 ## HOWTO
@@ -84,4 +88,8 @@ curl http://localhost:5001/face_encoding/<uuid>
 - `/stats/`: 
 ```
 curl http://localhost:5001/stats/
+```  
+- `/bonus/`: 
+```
+curl http://localhost:5001/bonus/
 ```  

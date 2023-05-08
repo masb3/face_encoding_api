@@ -129,3 +129,23 @@ def test_stats_api_method_not_allowed(test_app, method):
     resp = getattr(test_app, method)("/stats")
 
     assert resp.status_code == 405
+
+
+def test_bonus(test_app, monkeypatch):
+    expected_resp = {"avg": [1, 2]}
+
+    async def mock_get_avg_face_encodings():
+        return [1, 2]
+
+    monkeypatch.setattr(db, "get_avg_face_encodings", mock_get_avg_face_encodings)
+    resp = test_app.get("/bonus/")
+
+    assert resp.status_code == 200
+    assert resp.json() == expected_resp
+
+
+@pytest.mark.parametrize("method", ["post", "put", "patch", "delete", "options"])
+def test_bonus_api_method_not_allowed(test_app, method):
+    resp = getattr(test_app, method)("/bonus/")
+
+    assert resp.status_code == 405
