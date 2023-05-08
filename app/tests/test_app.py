@@ -77,7 +77,7 @@ def test_face_encoding(test_app, monkeypatch):
         return expected_resp
 
     monkeypatch.setattr(db, "get_face_encoding", mock_get_face_encoding)
-    resp = test_app.get(f"/face_encoding/{item_id}")
+    resp = test_app.get(f"/face_encoding/{item_id}/")
 
     assert resp.status_code == 200
     assert resp.json() == expected_resp
@@ -90,7 +90,7 @@ def test_face_encoding_invalid_id(test_app, monkeypatch):
         return None
 
     monkeypatch.setattr(db, "get_face_encoding", mock_get_face_encoding)
-    resp = test_app.get(f"/face_encoding/{item_id}")
+    resp = test_app.get(f"/face_encoding/{item_id}/")
 
     assert resp.status_code == 404
     assert resp.json() == {"detail": "Item not found"}
@@ -99,7 +99,7 @@ def test_face_encoding_invalid_id(test_app, monkeypatch):
 @pytest.mark.parametrize("method", ["post", "put", "patch", "delete", "options"])
 def test_face_encoding_api_method_not_allowed(test_app, method):
     item_id = "dce15431-a672-4ef2-b94d-4fe2f16b482f"
-    resp = getattr(test_app, method)(f"/face_encoding/{item_id}")
+    resp = getattr(test_app, method)(f"/face_encoding/{item_id}/")
 
     assert resp.status_code == 405
 
@@ -118,7 +118,7 @@ def test_stats(test_app, monkeypatch):
         return expected_resp
 
     monkeypatch.setattr(db, "get_stats", mock_get_stats)
-    resp = test_app.get("/stats")
+    resp = test_app.get("/stats/")
 
     assert resp.status_code == 200
     assert resp.json() == expected_resp
@@ -126,7 +126,7 @@ def test_stats(test_app, monkeypatch):
 
 @pytest.mark.parametrize("method", ["post", "put", "patch", "delete", "options"])
 def test_stats_api_method_not_allowed(test_app, method):
-    resp = getattr(test_app, method)("/stats")
+    resp = getattr(test_app, method)("/stats/")
 
     assert resp.status_code == 405
 

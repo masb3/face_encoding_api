@@ -71,7 +71,7 @@ async def create_upload_file(file: UploadFile) -> Union[FaceEncodingResp, dict]:
     return FaceEncodingResp(id=item_id, status=FACE_ENCODING_STATUS_CREATED)
 
 
-@app.get("/face_encoding/{item_id}")
+@app.get("/face_encoding/{item_id}/")
 async def face_encoding(item_id: UUID) -> FaceEncodingResp:
     result = await db.get_face_encoding(item_id)
     if not result:

@@ -84,7 +84,7 @@ curl -F "file=@/path/to/file/file.jpg" http://localhost:5001/uploadfile/
 ```
 - `/face_encoding/<uuid>/`: 
 ```
-curl http://localhost:5001/face_encoding/<uuid>
+curl http://localhost:5001/face_encoding/<uuid>/
 ```
 - `/stats/`: 
 ```
