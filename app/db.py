@@ -71,11 +71,16 @@ async def get_avg_face_encodings():
                     AND face_encoding IS NOT NULL 
                     AND array_length(face_encoding, 1) = :arr_len;
             """
-    avg = [0] * dimension  # Init avg array with zeros
+    avg = []
+    first_row = True
     # Fetch and calculate multiple rows without loading them all into memory at once
     async for row in database.iterate(
         query, {"status": FACE_ENCODING_STATUS_COMPLETED, "arr_len": dimension}
     ):
+        if first_row:
+            avg = row._mapping["face_encoding"]
+            first_row = False
+            continue
         arr = np.array([avg, row._mapping["face_encoding"]])
         avg = np.average(arr, axis=0).tolist()
     return avg
