@@ -41,7 +41,7 @@ created_at: timestamp
 - Multiple files upload
 - File storage outside API server 
 - Monitoring with Sentry, Datadog
-- Bonus API accept timeperiod in query parameter to limit number of face encodings to calculate average.
+- Bonus API accept timeperiod in query parameter to limit number of face encodings to calculate average.  
 Set default to some meaningful period
 
 

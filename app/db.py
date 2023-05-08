@@ -5,7 +5,10 @@ import databases
 import psycopg2
 import numpy as np
 
-from face_encoding_api.app.constants import FACE_ENCODING_STATUS_CREATED, FACE_ENCODING_STATUS_COMPLETED
+from face_encoding_api.app.constants import (
+    FACE_ENCODING_STATUS_CREATED,
+    FACE_ENCODING_STATUS_COMPLETED,
+)
 from face_encoding_api.settings import settings
 
 
@@ -69,7 +72,9 @@ async def get_avg_face_encodings():
                     AND array_length(face_encoding, 1) = :arr_len;
             """
     avg = [0] * dimension  # Init avg array with zeros
-    async for row in database.iterate(query, {"status": FACE_ENCODING_STATUS_COMPLETED, "arr_len": dimension}):
+    async for row in database.iterate(
+        query, {"status": FACE_ENCODING_STATUS_COMPLETED, "arr_len": dimension}
+    ):
         arr = np.array([avg, row._mapping["face_encoding"]])
         avg = np.average(arr, axis=0).tolist()
     return avg
