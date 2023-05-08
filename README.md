@@ -8,7 +8,8 @@ Assigns uuid, renames and saves image in file storage for further processing.
 Responds with uuid for later face encoding retrieval.
 - `/face_encoding/<uuid>/`: endpoint to retrieve face encoding and status of operation.
 - `/stats/`: endpoint to get total number of processed images and number of images processed grouped by status. 
-- `/bonus/`: calculates the average face encodings for all previously calculated images.  
+- `/bonus/`: calculates the average face encodings for all previously calculated images.   
+Fetch multiple rows without loading them all into memory at once and calculate average in async for loop.  
 
 ### Image processing background task
 Face encoding run asynchronous outside API request by separate worker process. 
