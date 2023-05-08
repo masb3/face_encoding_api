@@ -56,9 +56,9 @@ RABBITMQ_DEFAULT_USER="dummy"
 RABBITMQ_DEFAULT_PASS="dummy"
 ```
 To run program execute command in project root:  
-`docker compose up --build -d`  
+```docker compose up --build -d```  
 To run tests execute command in project root:  
-`docker compose exec api pytest`  
+```docker compose exec api pytest```  
 Tested with Docker v23.0.5  
 
 Note: hardcoded host ports
@@ -68,6 +68,6 @@ Note: hardcoded host ports
 These can be changed in [docker-compose.yml](https://github.com/masb3/face_encoding_api/blob/main/docker-compose.yml)
 
 ### API requests
-- `/uploadfile/`: `curl -F "file=@/path/to/file/file.jpg" http://localhost:5001/uploadfile/`
-- `/face_encoding/<uuid>/`: `curl http://localhost:5001/face_encoding/<uuid>`
-- `/stats/`: `curl http://localhost:5001/stats/`
+- `/uploadfile/`: ```curl -F "file=@/path/to/file/file.jpg" http://localhost:5001/uploadfile/```
+- `/face_encoding/<uuid>/`: ```curl http://localhost:5001/face_encoding/<uuid>```
+- `/stats/`: ```curl http://localhost:5001/stats/```  
