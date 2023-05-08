@@ -37,6 +37,7 @@ created_at: timestamp
 ### Improvements
 - Cache face encoding result in Redis
 - Add database migration tool alembic
+- Multiple files upload
 - File storage outside API server 
 - Monitoring with Sentry, Datadog
 
