@@ -72,6 +72,7 @@ async def get_avg_face_encodings():
                     AND array_length(face_encoding, 1) = :arr_len;
             """
     avg = [0] * dimension  # Init avg array with zeros
+    # Fetch and calculate multiple rows without loading them all into memory at once
     async for row in database.iterate(
         query, {"status": FACE_ENCODING_STATUS_COMPLETED, "arr_len": dimension}
     ):
