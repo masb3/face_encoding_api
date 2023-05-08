@@ -39,3 +39,35 @@ created_at: timestamp
 - Add database migration tool alembic
 - File storage outside API server 
 - Monitoring with Sentry, Datadog
+
+
+## HOWTO
+Create `.env` file in the project root folder
+```commandline
+POSTGRES_USER="dummy"
+POSTGRES_PASSWORD="dummy"
+POSTGRES_DB="dummy"
+DATABASE_URL="postgresql://dummy:dummy@db:5432/dummy"
+
+CELERY_BROKER_URL="amqp://dummy:dummy@rabbitmq:5672//"
+CELERY_RESULT_BACKEND="redis://redis:6379/0"
+
+RABBITMQ_DEFAULT_USER="dummy"
+RABBITMQ_DEFAULT_PASS="dummy"
+```
+To run program execute command in project root:  
+`docker compose up --build -d`  
+To run tests execute command in project root:  
+`docker compose exec api pytest`  
+Tested with Docker v23.0.5  
+
+Note: hardcoded host ports
+- `5001` - FastAPI service
+- `55055` - Flower monitoring  
+
+These can be changed in [docker-compose.yml](https://github.com/masb3/face_encoding_api/blob/main/docker-compose.yml)
+
+### API requests
+- `/uploadfile/`: `curl -F "file=@/path/to/file/file.jpg" http://localhost:5001/uploadfile/`
+- `/face_encoding/<uuid>/`: `curl http://localhost:5001/face_encoding/<uuid>`
+- `/stats/`: `curl http://localhost:5001/stats/`
